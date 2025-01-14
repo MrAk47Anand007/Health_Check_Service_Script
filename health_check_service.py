@@ -169,7 +169,7 @@ def post_to_webhook(text, color):
     try:
         # Send the POST request
         response = requests.post(webhook_url, json=body)
-        if response.status_code == 200:
+        if response.status_code == 202:
             print(f"Webhook message sent: {text}")
         else:
             print(f"Failed to send webhook message. Status code: {response.status_code}, Response: {response.text}")
