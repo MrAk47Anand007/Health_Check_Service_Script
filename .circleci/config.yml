@@ -1,0 +1,46 @@
+version: 2.1
+
+executors:
+  python-executor:
+    docker:
+      - image: circleci/python:3.9  # Use Python 3.9 image
+    working_directory: ~/repo
+
+jobs:
+  run-health-check-script:
+    executor: python-executor
+    steps:
+      - checkout  # Check out the code from your repository
+
+      # Install dependencies
+      - run:
+          name: Install Dependencies
+          command: |
+            python -m venv venv  # Create a virtual environment
+            . venv/bin/activate  # Activate the virtual environment
+            pip install -r requirements.txt  # Install requirements from requirements.txt
+
+      # Add your Google Service Account JSON as a file
+      - run:
+          name: Create Google Service Account File
+          command: |
+            echo "$SERVICE_JSON" > service_account.json
+
+      # Add your keys JSON as a file
+      - run:
+          name: Create Keys JSON File
+          command: |
+            echo "$KEYS_JSON" > keys.json
+
+      # Run the Python script
+      - run:
+          name: Run Python Script
+          command: |
+            . venv/bin/activate  # Activate the virtual environment
+            python health_check_service.py
+
+workflows:
+  version: 2
+  run-script-workflow:
+    jobs:
+      - run-health-check-script
