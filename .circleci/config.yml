@@ -1,44 +1,60 @@
 version: 2.1
 
+# Use an optimized and lightweight CircleCI Python image
 executors:
   python-executor:
     docker:
-      - image: circleci/python:3.9  # Use Python 3.9 image
+      - image: cimg/python:3.9  # Use next-gen minimal Python 3.9 image
+    resource_class: small  # Use the smallest available resource class
     working_directory: ~/repo
 
+# Jobs Section
 jobs:
   run-health-check-script:
     executor: python-executor
     steps:
-      - checkout  # Check out the code from your repository
+      # Check out the code from your repository
+      - checkout
 
-      # Install dependencies
+      # Restore cached virtual environment (if available)
+      - restore_cache:
+          keys:
+            - v1-venv-{{ checksum "requirements.txt" }}
+
+      # Install dependencies inside a virtual environment
       - run:
           name: Install Dependencies
           command: |
-            python -m venv venv  # Create a virtual environment
-            . venv/bin/activate  # Activate the virtual environment
-            pip install -r requirements.txt  # Install requirements from requirements.txt
+            python -m venv venv  # Create virtual environment
+            . venv/bin/activate  # Activate it
+            pip install -r requirements.txt  # Install dependencies
 
-      # Add your Google Service Account JSON as a file
+      # Save the virtual environment to the cache
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-venv-{{ checksum "requirements.txt" }}
+
+      # Create Google Service Account JSON file from the environment variable
       - run:
           name: Create Google Service Account File
           command: |
             echo "$SERVICE_JSON" > service_account.json
 
-      # Add your keys JSON as a file
+      # Create Keys JSON file from the environment variable
       - run:
           name: Create Keys JSON File
           command: |
             echo "$KEYS_JSON" > keys.json
 
-      # Run the Python script
+      # Run the Python script for health check
       - run:
           name: Run Python Script
           command: |
             . venv/bin/activate  # Activate the virtual environment
-            python health_check_service.py
+            python health_check_service.py  # Run the script
 
+# Workflows Section
 workflows:
   version: 2
   run-script-workflow:
